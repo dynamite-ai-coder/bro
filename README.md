@@ -40,13 +40,13 @@ Open `http://localhost:8080` and click **Open Desktop** (`/vnc.html`).
 ### Run the Selenium Example
 
 ```bash
-docker exec -it <container_id> python3 /home/desktopuser/selenium_example.py
+docker exec -it <container_id> /opt/venv/bin/python3 /home/desktopuser/selenium_example.py
 ```
 
 Set `SELENIUM_HEADLESS=1` to run Chrome without showing a window:
 
 ```bash
-docker exec -it -e SELENIUM_HEADLESS=1 <container_id> python3 /home/desktopuser/selenium_example.py
+docker exec -it -e SELENIUM_HEADLESS=1 <container_id> /opt/venv/bin/python3 /home/desktopuser/selenium_example.py
 ```
 
 ## Deploy to Render

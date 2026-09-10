@@ -12,12 +12,14 @@ RUN apt-get update && apt-get install -y \
     curl \
     dbus-x11 \
     fonts-liberation \
+    locales \
     net-tools \
     nginx \
     novnc \
     procps \
     python3 \
     python3-pip \
+    python3-venv \
     supervisor \
     unzip \
     wget \
@@ -36,11 +38,15 @@ RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd6
     && rm -f /tmp/google-chrome.deb \
     && rm -rf /var/lib/apt/lists/*
 
+RUN locale-gen en_US.UTF-8
+
 RUN useradd -m -s /bin/bash desktopuser \
     && echo "desktopuser:desktopuser" | chpasswd
 
 COPY requirements.txt /tmp/requirements.txt
-RUN pip3 install --no-cache-dir --break-system-packages -r /tmp/requirements.txt \
+RUN python3 -m venv /opt/venv \
+    && /opt/venv/bin/pip install --no-cache-dir --upgrade pip \
+    && /opt/venv/bin/pip install --no-cache-dir -r /tmp/requirements.txt \
     && rm -f /tmp/requirements.txt
 
 RUN mkdir -p /home/desktopuser/.config/xfce4/xfconf/xfce-perchannel-xml \
