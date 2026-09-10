@@ -44,25 +44,13 @@ RUN pip3 install --no-cache-dir --break-system-packages -r /tmp/requirements.txt
     && rm -f /tmp/requirements.txt
 
 RUN mkdir -p /home/desktopuser/.config/xfce4/xfconf/xfce-perchannel-xml \
-    && cat > /home/desktopuser/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml << 'XML'
-<?xml version="1.0" encoding="UTF-8"?>
-<channel name="xfce4-keyboard-shortcuts" version="1.0">
-  <property name="custom" type="empty"/>
-</channel>
-XML
+    && mkdir -p /home/desktopuser/.config/autostart \
+    && mkdir -p /home/desktopuser/Desktop
 
-RUN mkdir -p /home/desktopuser/.config/autostart /home/desktopuser/Desktop \
-    && cat > /home/desktopuser/.config/autostart/google-chrome.desktop << 'DESKTOP'
-[Desktop Entry]
-Type=Application
-Name=Google Chrome
-Comment=Web Browser
-Exec=google-chrome --no-sandbox --disable-gpu --start-maximized --no-first-run
-Icon=google-chrome
-Terminal=false
-Hidden=false
-DESKTOP
-    && cp /home/desktopuser/.config/autostart/google-chrome.desktop /home/desktopuser/Desktop/google-chrome.desktop \
+COPY config/xfce4-keyboard-shortcuts.xml /home/desktopuser/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml
+COPY config/google-chrome.desktop /home/desktopuser/.config/autostart/google-chrome.desktop
+
+RUN cp /home/desktopuser/.config/autostart/google-chrome.desktop /home/desktopuser/Desktop/google-chrome.desktop \
     && chmod +x /home/desktopuser/Desktop/google-chrome.desktop \
     && chown -R desktopuser:desktopuser /home/desktopuser
 
