@@ -1,0 +1,10 @@
+#!/bin/bash
+set -e
+
+export DISPLAY="${DISPLAY:-:0}"
+
+if command -v dbus-launch >/dev/null 2>&1; then
+    exec dbus-launch --exit-with-session xfce4-session
+fi
+
+exec xfce4-session
