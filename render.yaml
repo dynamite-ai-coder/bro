@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: remote-desktop
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: RESOLUTION
+        value: 1280x800
+      - key: VNC_PASSWORD
+        sync: false
+    healthCheckPath: /health
+    autoDeploy: true
