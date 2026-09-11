@@ -55,6 +55,9 @@ RUN mkdir -p /home/desktopuser/.config/xfce4/xfconf/xfce-perchannel-xml \
 
 COPY config/xfce4-keyboard-shortcuts.xml /home/desktopuser/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml
 COPY config/google-chrome.desktop /home/desktopuser/.config/autostart/google-chrome.desktop
+COPY config/gnome-keyring-hidden.desktop /home/desktopuser/.config/autostart/gnome-keyring-secrets.desktop
+COPY config/gnome-keyring-hidden.desktop /home/desktopuser/.config/autostart/gnome-keyring-ssh.desktop
+COPY config/gnome-keyring-hidden.desktop /home/desktopuser/.config/autostart/gnome-keyring-pkcs11.desktop
 
 RUN cp /home/desktopuser/.config/autostart/google-chrome.desktop /home/desktopuser/Desktop/google-chrome.desktop \
     && chmod +x /home/desktopuser/Desktop/google-chrome.desktop \
