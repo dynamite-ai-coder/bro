@@ -13,6 +13,7 @@ def create_driver():
     options = Options()
     options.add_argument('--no-sandbox')
     options.add_argument('--test-type')
+    options.add_argument('--password-store=basic')
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--disable-gpu')
     options.add_argument('--no-first-run')
