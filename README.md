@@ -72,6 +72,9 @@ To create the service from scratch:
 curl -i https://bro-56z7.onrender.com/health
 # HTTP/1.1 200 OK
 # {"status":"healthy"}
+
+curl -s https://bro-56z7.onrender.com/version
+# {"commit":"<git sha of the deployed revision>","branch":"main","service":"bro"}
 ```
 
 ## Architecture

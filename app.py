@@ -12,6 +12,15 @@ def health():
     return {'status': 'healthy'}, 200
 
 
+@app.route('/version')
+def version():
+    return {
+        'commit': os.environ.get('RENDER_GIT_COMMIT', 'unknown'),
+        'branch': os.environ.get('RENDER_GIT_BRANCH', 'unknown'),
+        'service': os.environ.get('RENDER_SERVICE_NAME', 'unknown'),
+    }, 200
+
+
 @app.route('/')
 def index():
     return send_from_directory(NOVNC_DIR, 'index.html')
