@@ -108,8 +108,14 @@ nginx is the only process bound to the public `$PORT`.
 ### Blank screen in noVNC
 
 - Wait for XFCE to start (5-10 s after the container is healthy).
-- Check `x11vnc` logs with `docker logs <container>`.
+- x11vnc logs are written to `/var/log/x11vnc.log` inside the container.
 - Make sure `/websockify` reaches websockify; check the nginx access log.
+
+### Log noise
+
+Render's platform probes every listening port on `127.0.0.1` with `HEAD /`
+requests. Port 5900 receives these probes, so x11vnc's logs are redirected to
+`/var/log/x11vnc.log` to keep the Render log stream readable.
 
 ### Out of memory
 
