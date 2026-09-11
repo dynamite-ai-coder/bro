@@ -10,7 +10,9 @@ http {
     include /etc/nginx/mime.types;
     default_type application/octet-stream;
 
-    access_log /var/log/nginx/access.log;
+    log_format main '$remote_addr - [$time_local] "$request" $status '
+                    '$body_bytes_sent "$http_user_agent" upstream=$upstream_addr';
+    access_log /dev/stdout main;
 
     sendfile on;
     keepalive_timeout 65;
