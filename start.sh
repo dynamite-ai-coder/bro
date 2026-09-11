@@ -32,11 +32,36 @@ sed "s/__PORT__/${PORT}/g" /etc/nginx/nginx.conf.template > /etc/nginx/nginx.con
 
 (
     sleep 30
-    for diag_port in 5900 6080 5000 10000; do
-        echo "=== DIAG tcpdump port ${diag_port} ==="
-        timeout 8 tcpdump -i lo -n -A -s 0 "tcp port ${diag_port} and tcp[13] & 8 != 0" 2>&1 \
-            | grep -vE '^tcpdump:|reading from file|listening on' | head -60
-    done
+    echo "=== DIAG stopping x11vnc to capture probe ==="
+    /usr/bin/supervisorctl stop x11vnc >/dev/null 2>&1
+    sleep 1
+    python3 - << 'PY'
+import socket
+import time
+
+sock = socket.socket()
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+sock.bind(('127.0.0.1', 5900))
+sock.listen(5)
+sock.settimeout(0.5)
+deadline = time.time() + 15
+while time.time() < deadline:
+    try:
+        conn, addr = sock.accept()
+    except socket.timeout:
+        continue
+    conn.settimeout(1.0)
+    data = b''
+    try:
+        data = conn.recv(1024)
+    except Exception:
+        pass
+    print(f'=== DIAG probe from {addr} data={data!r}', flush=True)
+    conn.close()
+sock.close()
+print('=== DIAG tarp done ===', flush=True)
+PY
+    /usr/bin/supervisorctl start x11vnc >/dev/null 2>&1
     echo "=== DIAG done ==="
 ) &
 
