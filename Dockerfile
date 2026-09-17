@@ -18,6 +18,8 @@ RUN apt-get update && apt-get install -y \
     libxt6t64 \
     locales \
     net-tools \
+    nginx \
+    novnc \
     procps \
     python3 \
     python3-pip \
@@ -26,6 +28,7 @@ RUN apt-get update && apt-get install -y \
     supervisor \
     unzip \
     wget \
+    websockify \
     x11-utils \
     x11-xserver-utils \
     x11vnc \
@@ -88,12 +91,17 @@ RUN cp /home/desktopuser/.config/autostart/google-chrome.desktop /home/desktopus
 COPY selenium_example.py /home/desktopuser/selenium_example.py
 
 COPY config/xrdp.ini /etc/xrdp/xrdp.ini
+COPY nginx.conf.template /etc/nginx/nginx.conf.template
+COPY app.py /app.py
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY scripts/ /usr/local/bin/
 COPY start.sh /start.sh
 
-RUN chmod +x /start.sh /usr/local/bin/start-x11vnc.sh /usr/local/bin/start-xfce.sh \
-        /usr/local/bin/start-xrdp.sh \
+RUN chmod +x /start.sh /usr/local/bin/start-nginx.sh /usr/local/bin/start-web.sh \
+        /usr/local/bin/start-x11vnc.sh /usr/local/bin/start-xfce.sh /usr/local/bin/start-xrdp.sh \
     && chown desktopuser:desktopuser /home/desktopuser/selenium_example.py
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -fsS "http://localhost:${PORT:-8080}/health" || exit 1
 
 ENTRYPOINT ["/start.sh"]
