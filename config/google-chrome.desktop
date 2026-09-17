@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Google Chrome
+Comment=Web Browser
+Exec=google-chrome --no-sandbox --test-type --disable-gpu --password-store=basic --start-maximized --no-first-run
+Icon=google-chrome
+Terminal=false
+Hidden=false

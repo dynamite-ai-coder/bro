@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Tor Browser
+Comment=Browse the web anonymously through the Tor network
+Exec=env MOZ_DISABLE_CONTENT_SANDBOX=1 /home/desktopuser/tor-browser/Browser/start-tor-browser
+Icon=/home/desktopuser/tor-browser/Browser/browser/chrome/icons/default/default128.png
+Terminal=false
+Hidden=false
+Categories=Network;WebBrowser;Security;

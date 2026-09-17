@@ -53,11 +53,39 @@ RUN mkdir -p /home/desktopuser/.config/xfce4/xfconf/xfce-perchannel-xml \
     && mkdir -p /home/desktopuser/Desktop \
     && chown -R desktopuser:desktopuser /home/desktopuser
 
+RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -O /tmp/google-chrome.deb \
+    && apt-get update \
+    && apt-get install -y /tmp/google-chrome.deb \
+    && rm -f /tmp/google-chrome.deb \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG TOR_BROWSER_VERSION=15.0.23
+RUN wget -q "https://dist.torproject.org/torbrowser/${TOR_BROWSER_VERSION}/tor-browser-linux-x86_64-${TOR_BROWSER_VERSION}.tar.xz" -O /tmp/tor-browser.tar.xz \
+    && mkdir -p /home/desktopuser/tor-browser \
+    && tar -xJf /tmp/tor-browser.tar.xz -C /home/desktopuser/tor-browser --strip-components=1 \
+    && rm -f /tmp/tor-browser.tar.xz \
+    && test -x /home/desktopuser/tor-browser/Browser/start-tor-browser \
+    && chown -R desktopuser:desktopuser /home/desktopuser/tor-browser
+
 COPY requirements.txt /tmp/requirements.txt
 RUN python3 -m venv /opt/venv \
     && /opt/venv/bin/pip install --no-cache-dir --upgrade pip \
     && /opt/venv/bin/pip install --no-cache-dir -r /tmp/requirements.txt \
     && rm -f /tmp/requirements.txt
+
+COPY config/xfce4-keyboard-shortcuts.xml /home/desktopuser/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml
+COPY config/google-chrome.desktop /home/desktopuser/.config/autostart/google-chrome.desktop
+COPY config/gnome-keyring-hidden.desktop /home/desktopuser/.config/autostart/gnome-keyring-secrets.desktop
+COPY config/gnome-keyring-hidden.desktop /home/desktopuser/.config/autostart/gnome-keyring-ssh.desktop
+COPY config/gnome-keyring-hidden.desktop /home/desktopuser/.config/autostart/gnome-keyring-pkcs11.desktop
+COPY config/tor-browser.desktop /home/desktopuser/Desktop/tor-browser.desktop
+COPY config/tor-browser.desktop /usr/share/applications/tor-browser.desktop
+
+RUN cp /home/desktopuser/.config/autostart/google-chrome.desktop /home/desktopuser/Desktop/google-chrome.desktop \
+    && chmod +x /home/desktopuser/Desktop/google-chrome.desktop /home/desktopuser/Desktop/tor-browser.desktop \
+    && chown -R desktopuser:desktopuser /home/desktopuser
+
+COPY selenium_example.py /home/desktopuser/selenium_example.py
 
 COPY config/xrdp.ini /etc/xrdp/xrdp.ini
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
@@ -65,6 +93,7 @@ COPY scripts/ /usr/local/bin/
 COPY start.sh /start.sh
 
 RUN chmod +x /start.sh /usr/local/bin/start-x11vnc.sh /usr/local/bin/start-xfce.sh \
-        /usr/local/bin/start-xrdp.sh
+        /usr/local/bin/start-xrdp.sh \
+    && chown desktopuser:desktopuser /home/desktopuser/selenium_example.py
 
 ENTRYPOINT ["/start.sh"]
