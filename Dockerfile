@@ -60,6 +60,11 @@ RUN python3 -m venv /opt/venv \
     && rm -f /tmp/requirements.txt
 
 COPY config/xrdp.ini /etc/xrdp/xrdp.ini
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY scripts/ /usr/local/bin/
+COPY start.sh /start.sh
 
-RUN chmod +x /usr/local/bin/start-xrdp.sh
+RUN chmod +x /start.sh /usr/local/bin/start-x11vnc.sh /usr/local/bin/start-xfce.sh \
+        /usr/local/bin/start-xrdp.sh
+
+ENTRYPOINT ["/start.sh"]
