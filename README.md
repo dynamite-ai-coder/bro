@@ -19,7 +19,7 @@ Browser --HTTPS/WSS--> Render --+--> nginx :$PORT
                                 |     |-- /vnc.html     --> waitress/Flask :5000  (noVNC app + static files)
                                 |     '-- /websockify   --> websockify :6080 --> x11vnc :5900
                                 |                                                  |
-RDP client --> ngrok/bore TCP --+--> xrdp :3389 --> x11vnc :5900 ------------------+--> Xvfb :0 --> XFCE
+RDP client --> ngrok/pinggy/bore TCP --+--> xrdp :3389 --> x11vnc :5900 ----------+--> Xvfb :0 --> XFCE
 ```
 
 All processes are supervised by `supervisord` (started by `/start.sh`), so every
@@ -46,7 +46,7 @@ characters of the password, so `Dupa1234@` is effectively `Dupa1234`.
 | `RESOLUTION` | `1280x800` | Virtual desktop size; `24`-bit depth is appended automatically |
 | `VNC_PASSWORD` | `Dupa1234@` | Password for RDP and noVNC. Change it in Render |
 | `INTERNAL_PORT` | `5000` | Internal waitress port behind nginx |
-| `NGROK_AUTHTOKEN` | (empty) | ngrok agent authtoken. When set, the RDP tunnel uses ngrok; otherwise the public bore.pub relay is used |
+| `NGROK_AUTHTOKEN` | (empty) | ngrok agent authtoken. ngrok TCP endpoints require a verified payment method; on a free account the script automatically falls back to pinggy |
 | `RDP_TUNNEL_PORT` | `0` | Requested public port for the bore tunnel (`0` = random) |
 | `BORE_SECRET` | (empty) | Optional shared secret for a self-hosted bore server |
 | `TUNNEL_FILE` | `/run/rdp-tunnel.txt` | Where the tunnel script writes `host:port` for `GET /rdp` |
@@ -94,12 +94,19 @@ curl -s https://bro-56z7.onrender.com/rdp
 8. Open the service URL and click **Open Desktop in Browser** (noVNC), or connect
    a native RDP client to the address returned by `/rdp`.
 
-### ngrok authtoken
+### ngrok authtoken and tunnel fallbacks
 
-The tunnel script prefers ngrok when `NGROK_AUTHTOKEN` is set. Create an agent
-authtoken at https://dashboard.ngrok.com/get-started/your-authtoken and add it as
-an environment variable. If ngrok fails, the container automatically falls back
-to the public bore.pub relay.
+The tunnel script tries providers in order:
+
+1. **ngrok** when `NGROK_AUTHTOKEN` is set. TCP endpoints on a free ngrok
+   account are rejected (`ERR_NGROK_8013`) until a payment method is verified at
+   https://dashboard.ngrok.com/settings#id-verification.
+2. **pinggy** (`ssh -R` TCP tunnel). Free sessions last 60 minutes; the
+   supervisor restarts the script automatically, so the endpoint refreshes
+   itself with a new address.
+3. **bore.pub** public relay as the last resort.
+
+The current address is always available at `GET /rdp` and on the landing page.
 
 ## Local development
 
@@ -123,8 +130,9 @@ Set `SELENIUM_HEADLESS=1` to run Chrome without a visible window.
 ## Limitations
 
 - **Only HTTP/HTTPS is public on Render.** The browser desktop works directly;
-  native RDP needs the ngrok/bore tunnel. Tunnel addresses change on every
-  container start.
+  native RDP needs the ngrok/pinggy/bore tunnel. Tunnel addresses change on every
+  container start, and pinggy sessions expire after 60 minutes (the endpoint
+  refreshes automatically).
 - **Free/low plans sleep** after inactivity, which drops RDP sessions and the
   tunnel. Use a paid instance type for reliable access.
 - **RAM**: XFCE + Chrome + Tor Browser needs 1-2 GB minimum. On smaller instances

@@ -46,6 +46,40 @@ start_ngrok() {
     return 1
 }
 
+start_pinggy() {
+    local log="/run/pinggy-tunnel.log" pid i address
+    echo "Starting pinggy TCP tunnel to 127.0.0.1:${RDP_PORT}..."
+    : > "$log"
+    ssh -T -p 443 \
+        -o StrictHostKeyChecking=no \
+        -o UserKnownHostsFile=/dev/null \
+        -o ServerAliveInterval=15 \
+        -o ExitOnForwardFailure=yes \
+        -o BatchMode=yes \
+        -R0:127.0.0.1:${RDP_PORT} tcp@a.pinggy.io > "$log" 2>&1 &
+    pid=$!
+    for i in $(seq 1 30); do
+        if ! kill -0 "$pid" 2>/dev/null; then
+            cat "$log"
+            wait "$pid" 2>/dev/null || true
+            return 1
+        fi
+        address="$(sed -n 's/.*tcp:\/\/\([^ ]*\).*/\1/p' "$log" | head -n 1)"
+        if [ -n "$address" ]; then
+            write_address "$address"
+            echo "RDP tunnel is up (pinggy): ${address}"
+            cat "$log"
+            wait "$pid"
+            return $?
+        fi
+        sleep 1
+    done
+    echo "pinggy did not report a tunnel within 30s; stopping it" >&2
+    cat "$log"
+    stop_pid "$pid"
+    return 1
+}
+
 start_bore() {
     local args=() log="/run/bore-tunnel.log" pid i port target
     target="$(getent ahostsv4 bore.pub 2>/dev/null | awk 'NR==1{print $1}')"
@@ -91,10 +125,15 @@ if [ -n "${NGROK_AUTHTOKEN:-}" ]; then
     if start_ngrok "$NGROK_AUTHTOKEN"; then
         exit 0
     fi
-    echo "ngrok failed; falling back to the public bore.pub relay" >&2
+    echo "ngrok failed; falling back to pinggy" >&2
 else
-    echo "NGROK_AUTHTOKEN is not set; using the public bore.pub relay" >&2
+    echo "NGROK_AUTHTOKEN is not set; trying pinggy" >&2
 fi
 
+if start_pinggy; then
+    exit 0
+fi
+
+echo "pinggy failed; falling back to the public bore.pub relay" >&2
 start_bore
 exit $?

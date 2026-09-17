@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y \
     net-tools \
     nginx \
     novnc \
+    openssh-client \
     procps \
     python3 \
     python3-pip \
