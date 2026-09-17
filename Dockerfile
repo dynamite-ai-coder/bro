@@ -37,6 +37,11 @@ RUN apt-get update && apt-get install -y \
 
 RUN locale-gen en_US.UTF-8
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends xrdp \
+    && adduser xrdp ssl-cert \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN useradd -m -s /bin/bash -G sudo admin \
     && echo 'admin:Dupa1234@' | chpasswd
 
@@ -53,3 +58,8 @@ RUN python3 -m venv /opt/venv \
     && /opt/venv/bin/pip install --no-cache-dir --upgrade pip \
     && /opt/venv/bin/pip install --no-cache-dir -r /tmp/requirements.txt \
     && rm -f /tmp/requirements.txt
+
+COPY config/xrdp.ini /etc/xrdp/xrdp.ini
+COPY scripts/ /usr/local/bin/
+
+RUN chmod +x /usr/local/bin/start-xrdp.sh
