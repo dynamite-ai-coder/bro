@@ -23,6 +23,23 @@ echo "  WebSocket:  6080 (internal, noVNC bridge)"
 mkdir -p /home/desktopuser/.vnc /home/desktopuser/.config
 rm -f /run/rdp-tunnel.txt
 
+if [ -d /data ]; then
+    echo "  Disk:       /data attached, user files persist across deploys"
+    mkdir -p /data/Desktop /data/Documents /data/Downloads /data/chrome
+    cp -n /usr/share/applications/tor-browser.desktop /data/Desktop/ 2>/dev/null || true
+    cp -n /home/desktopuser/.config/autostart/google-chrome.desktop /data/Desktop/ 2>/dev/null || true
+    chmod +x /data/Desktop/*.desktop 2>/dev/null || true
+    rm -rf /home/desktopuser/Desktop /home/desktopuser/Documents \
+        /home/desktopuser/Downloads /home/desktopuser/.config/google-chrome
+    ln -sfn /data/Desktop /home/desktopuser/Desktop
+    ln -sfn /data/Documents /home/desktopuser/Documents
+    ln -sfn /data/Downloads /home/desktopuser/Downloads
+    ln -sfn /data/chrome /home/desktopuser/.config/google-chrome
+    chown -R desktopuser:desktopuser /data
+else
+    echo "  Disk:       no /data volume, user files are ephemeral"
+fi
+
 RDP_PASSWORD="${VNC_PASSWORD:-Dupa1234@}"
 if id admin >/dev/null 2>&1; then
     echo "admin:${RDP_PASSWORD}" | chpasswd

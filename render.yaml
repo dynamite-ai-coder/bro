@@ -6,6 +6,10 @@ services:
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
     autoDeploy: true
+    disk:
+      name: desktop-data
+      mountPath: /data
+      sizeGB: 1
     envVars:
       - key: RESOLUTION
         value: 1280x800
