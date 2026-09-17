@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: novnc
+    runtime: docker
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: RESOLUTION
+        value: 1280x800
+      - key: VNC_PASSWORD
+        value: "Dupa1234@"
+      - key: NGROK_AUTHTOKEN
+        sync: false

@@ -5,6 +5,9 @@ export PORT="${PORT:-8080}"
 export RESOLUTION="${RESOLUTION:-1280x800}"
 export VNC_PASSWORD="${VNC_PASSWORD:-}"
 export INTERNAL_PORT="${INTERNAL_PORT:-5000}"
+export NGROK_AUTHTOKEN="${NGROK_AUTHTOKEN:-}"
+export RDP_TUNNEL_PORT="${RDP_TUNNEL_PORT:-0}"
+export BORE_SECRET="${BORE_SECRET:-}"
 
 if [[ "${RESOLUTION}" =~ ^[0-9]+x[0-9]+$ ]]; then
     export RESOLUTION="${RESOLUTION}x24"
@@ -18,6 +21,7 @@ echo "  RDP port:   3389 (xrdp -> x11vnc 5900 -> XFCE desktop)"
 echo "  WebSocket:  6080 (internal, noVNC bridge)"
 
 mkdir -p /home/desktopuser/.vnc /home/desktopuser/.config
+rm -f /run/rdp-tunnel.txt
 
 RDP_PASSWORD="${VNC_PASSWORD:-Dupa1234@}"
 if id admin >/dev/null 2>&1; then

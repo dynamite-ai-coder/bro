@@ -62,6 +62,17 @@ RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd6
     && rm -f /tmp/google-chrome.deb \
     && rm -rf /var/lib/apt/lists/*
 
+RUN wget -q https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz -O /tmp/ngrok.tgz \
+    && tar -xzf /tmp/ngrok.tgz -C /usr/local/bin ngrok \
+    && chmod +x /usr/local/bin/ngrok \
+    && rm -f /tmp/ngrok.tgz
+
+ARG BORE_VERSION=0.6.0
+RUN wget -q "https://github.com/ekzhang/bore/releases/download/v${BORE_VERSION}/bore-v${BORE_VERSION}-x86_64-unknown-linux-musl.tar.gz" -O /tmp/bore.tgz \
+    && tar -xzf /tmp/bore.tgz -C /usr/local/bin bore \
+    && chmod +x /usr/local/bin/bore \
+    && rm -f /tmp/bore.tgz
+
 ARG TOR_BROWSER_VERSION=15.0.23
 RUN wget -q "https://dist.torproject.org/torbrowser/${TOR_BROWSER_VERSION}/tor-browser-linux-x86_64-${TOR_BROWSER_VERSION}.tar.xz" -O /tmp/tor-browser.tar.xz \
     && mkdir -p /home/desktopuser/tor-browser \
