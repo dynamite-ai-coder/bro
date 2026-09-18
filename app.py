@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, Response, send_from_directory
+from flask import Flask, Response, request, send_from_directory
 
 NOVNC_DIR = os.environ.get('NOVNC_DIR', '/usr/share/novnc')
 TUNNEL_FILE = os.environ.get('TUNNEL_FILE', '/run/rdp-tunnel.txt')
