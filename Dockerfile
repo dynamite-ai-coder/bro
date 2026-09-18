@@ -8,9 +8,11 @@ ENV DEBIAN_FRONTEND=noninteractive \
     RESOLUTION=1280x800
 
 RUN apt-get update && apt-get install -y \
+    at-spi2-core \
     ca-certificates \
     curl \
     dbus-x11 \
+    fonts-dejavu-core \
     fonts-liberation \
     iproute2 \
     libasound2t64 \
@@ -35,8 +37,12 @@ RUN apt-get update && apt-get install -y \
     x11vnc \
     xdg-utils \
     xfce4 \
+    xfce4-terminal \
+    xterm \
     xvfb \
     xz-utils \
+    && apt-get purge -y zutty \
+    && update-alternatives --set x-terminal-emulator /usr/bin/xfce4-terminal.wrapper \
     && rm -rf /var/lib/apt/lists/*
 
 RUN locale-gen en_US.UTF-8
