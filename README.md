@@ -74,8 +74,10 @@ x11vnc password from that variable at startup.
 The image is tuned to use the whole instance (all vCPUs and RAM) as far as the
 VNC/RDP pipeline allows:
 
-- `x11vnc` runs with `-threads` (one thread per client), XDAMAGE enabled (the old
-  `-noxdamage` flag was removed) and `-wait 1 -defer 1` for the lowest latency.
+- `x11vnc` stays single-threaded: its experimental `-threads` mode (together with
+  XDAMAGE and `-wait 1 -defer 1`) hung the server when several clients connected,
+  so the stable `-noxdamage` configuration is kept. VNC encoding is the one part
+  of the stack that does not scale across cores.
 - `nginx` uses `worker_processes auto` (one worker per vCPU), 8192 connections
   per worker, `multi_accept`, `tcp_nopush`/`tcp_nodelay` and a 65535
   file-descriptor limit.
