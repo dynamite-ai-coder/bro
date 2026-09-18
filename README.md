@@ -30,7 +30,7 @@ component restarts automatically. nginx is the only process bound to `$PORT`.
 | Item | Value |
 |------|-------|
 | RDP username | `admin` |
-| RDP password | `VNC_PASSWORD` (default `Dupa1234@`) |
+| RDP password | `VNC_PASSWORD` (Render env var, no value in the repo) |
 | OS user | desktop session runs as `root`; `admin` and `desktopuser` exist for console use |
 | noVNC password | same as `VNC_PASSWORD` |
 
@@ -42,7 +42,12 @@ run as root, so its launcher drops back to `desktopuser` with `runuser`.
 
 The RDP login bridges to x11vnc in password mode, so the username is ignored and
 the password is the VNC password. The RFB protocol only uses the first 8
-characters of the password, so `Dupa1234@` is effectively `Dupa1234`.
+characters of the password.
+
+The password is never stored in the repository: `render.yaml` declares
+`VNC_PASSWORD` with `sync: false`, so Render asks for it and keeps it as a
+secret environment variable. The container sets the OS account passwords and the
+x11vnc password from that variable at startup.
 
 ## Environment variables
 
@@ -50,7 +55,7 @@ characters of the password, so `Dupa1234@` is effectively `Dupa1234`.
 |----------|---------|-------------|
 | `PORT` | `8080` | Public HTTP port. Render sets this automatically (usually `10000`); do not set it manually |
 | `RESOLUTION` | `1280x800` | Virtual desktop size; `24`-bit depth is appended automatically |
-| `VNC_PASSWORD` | `Dupa1234@` | Password for RDP and noVNC. Change it in Render |
+| `VNC_PASSWORD` | (required) | Password for RDP and noVNC. Set it in the Render dashboard; it is stored only on Render. The RFB protocol only uses the first 8 characters; avoid `:` in the value |
 | `INTERNAL_PORT` | `5000` | Internal waitress port behind nginx |
 | `NGROK_AUTHTOKEN` | (empty) | ngrok agent authtoken. ngrok TCP endpoints require a verified payment method; on a free account the script automatically falls back to pinggy |
 | `RDP_TUNNEL_PORT` | `0` | Requested public port for the bore tunnel (`0` = random) |
@@ -80,7 +85,8 @@ characters of the password, so `Dupa1234@` is effectively `Dupa1234`.
    - Name: `desktop-data`, mount path: `/data`, size: 1 GB or more
    - Files in `Desktop`, `Documents`, `Downloads` and the Chrome profile survive
      restarts and deploys. Without the disk everything is ephemeral.
-5. Set environment variables in the dashboard (or `render.yaml`):
+5. Set environment variables in the dashboard (**required**; they are stored on
+   Render, not in the repo):
    - `VNC_PASSWORD` = your RDP/noVNC password
    - `NGROK_AUTHTOKEN` = ngrok agent token (optional; without it bore.pub is used)
 6. Click **Create Web Service** and wait for the first build (~5-10 minutes).
@@ -118,7 +124,7 @@ The current address is always available at `GET /rdp` and on the landing page.
 
 ```bash
 docker build -t bro .
-docker run --rm -p 8080:8080 -e PORT=8080 -e VNC_PASSWORD=Dupa1234@ bro
+docker run --rm -p 8080:8080 -e PORT=8080 -e VNC_PASSWORD=change-me bro
 ```
 
 Open http://localhost:8080 for the landing page and http://localhost:8080/vnc.html
@@ -163,6 +169,8 @@ Set `SELENIUM_HEADLESS=1` to run Chrome without a visible window.
 - The XFCE session, the desktop apps and every terminal run as root. `sudo` is
   blocked by Render's `no-new-privileges` flag; admin commands work directly.
   Treat the desktop as a shared secret.
+- The password is only stored as a Render environment variable and inside the
+  running container; it is never committed to the repository.
 - Rotate any API tokens that were shared in chat, logs or commits.
 
 ## Troubleshooting

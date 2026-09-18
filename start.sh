@@ -40,13 +40,21 @@ else
     echo "  Disk:       no /data volume, user files are ephemeral"
 fi
 
-RDP_PASSWORD="${VNC_PASSWORD:-Dupa1234@}"
-if id admin >/dev/null 2>&1; then
-    echo "admin:${RDP_PASSWORD}" | chpasswd
+if [ -z "${VNC_PASSWORD}" ]; then
+    echo "ERROR: VNC_PASSWORD is not set." >&2
+    echo "Set it in the Render dashboard (Environment) or pass -e VNC_PASSWORD=... locally." >&2
+    exit 1
 fi
+
+RDP_PASSWORD="${VNC_PASSWORD}"
+for account in admin desktopuser; do
+    if id "${account}" >/dev/null 2>&1; then
+        echo "${account}:${RDP_PASSWORD}" | chpasswd
+    fi
+done
 x11vnc -storepasswd "${RDP_PASSWORD}" /home/desktopuser/.vnc/passwd >/dev/null
 chown -R desktopuser:desktopuser /home/desktopuser/.vnc
-echo "  RDP auth:   user 'admin', password from VNC_PASSWORD"
+echo "  RDP auth:   user 'admin', password from VNC_PASSWORD (Render env var)"
 if [ "${#RDP_PASSWORD}" -gt 8 ]; then
     echo "  Note:       RDP/VNC passwords are truncated to the first 8 characters by the RFB protocol"
 fi

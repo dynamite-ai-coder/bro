@@ -52,8 +52,7 @@ RUN apt-get update \
     && adduser xrdp ssl-cert \
     && rm -rf /var/lib/apt/lists/*
 
-RUN useradd -m -s /bin/bash -G sudo admin \
-    && echo 'admin:Dupa1234@' | chpasswd
+RUN useradd -m -s /bin/bash -G sudo admin
 
 RUN useradd -m -s /bin/bash -G sudo desktopuser
 
