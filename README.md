@@ -71,29 +71,43 @@ x11vnc password from that variable at startup.
 
 ## Performance tuning
 
-The image is tuned to use the whole instance (all vCPUs and RAM) as far as the
-VNC/RDP pipeline allows:
+The image detects the resources of whatever service it runs on at startup and
+sizes every component to them, so the same repository works correctly on a 1 vCPU
+/ 512 MB instance and on a 12 vCPU / 24 GB instance:
 
+- `start.sh` reads the cgroup v2 (`/sys/fs/cgroup/cpu.max`,
+  `/sys/fs/cgroup/memory.max`) or cgroup v1 limits and exports `CPU_COUNT` and
+  `MEMORY_MB`; when no cgroup limit exists it falls back to `nproc` and
+  `/proc/meminfo`. This matters because `nproc`/`free` show the host values, not
+  the service plan.
+- `nginx` gets `worker_processes = CPU_COUNT` (one worker per vCPU),
+  `worker_connections` and `worker_rlimit_nofile` derived from the detected CPU
+  count and the hard `nofile` limit, `multi_accept`,
+  `tcp_nopush`/`tcp_nodelay`.
+- `waitress` runs `CPU_COUNT * 4` threads (clamped to 8-256).
+- `start.sh` exports `OMP_NUM_THREADS`, `OPENBLAS_NUM_THREADS`,
+  `NUMEXPR_NUM_THREADS`, `MKL_NUM_THREADS` and `VECLIB_MAXIMUM_THREADS` with the
+  detected CPU count, so math/OpenMP workloads do not oversubscribe the host.
+- `start.sh` raises the soft `nofile` limit to the hard limit of the service.
 - `x11vnc` stays single-threaded: its experimental `-threads` mode (together with
   XDAMAGE and `-wait 1 -defer 1`) hung the server when several clients connected,
   so the stable `-noxdamage` configuration is kept. VNC encoding is the one part
   of the stack that does not scale across cores.
-- `nginx` uses `worker_processes auto` (one worker per vCPU), 8192 connections
-  per worker, `multi_accept`, `tcp_nopush`/`tcp_nodelay` and a 65535
-  file-descriptor limit.
-- `waitress` serves the Flask app with 16 threads.
-- `supervisord` raises `minfds`/`minprocs` to 65535 and `start.sh` runs
-  `ulimit -n 65535`.
-- Chrome starts with background throttling disabled
-  (`--disable-background-timer-throttling`,
-  `--disable-backgrounding-occluded-windows`, `--disable-renderer-backgrounding`)
-  and `--disable-dev-shm-usage`, so hidden tabs and Selenium jobs keep the CPU
-  busy without crashing on the small container `/dev/shm`.
+- Chrome is launched through `google-chrome-tuned`, which disables background
+  throttling (`--disable-background-timer-throttling`,
+  `--disable-backgrounding-occluded-windows`, `--disable-renderer-backgrounding`),
+  adds `--disable-dev-shm-usage` and sets `--num-raster-threads` to the detected
+  CPU count, so hidden tabs, rasterization and Selenium jobs can use every core
+  without crashing on the small container `/dev/shm`.
+
+`GET /resources` returns the detected values (`cpu_count`, `memory_mb`,
+`nginx_workers`, `web_threads`, `nofile_limit`, `worker_connections`) so you can
+verify the sizing on any service.
 
 X11 itself (Xvfb, xrdp) is mostly single-threaded, so one RDP/noVNC stream will
 not saturate every core; the applications inside the desktop (Chrome, Tor,
 Selenium, compilers) are what scale across all vCPUs and use the full RAM of the
-Render plan. The image sets no per-container CPU or memory caps.
+service. The image sets no per-container CPU or memory caps.
 
 ## HTTP endpoints
 
@@ -105,6 +119,7 @@ Render plan. The image sets no per-container CPU or memory caps.
 | `/<RDP_WS_PATH>` | Stable WebSocket-to-RDP bridge (xrdp 3389), used by the `websocat` client |
 | `/health` | Health check used by Render |
 | `/version` | Deployed commit/branch/service from Render env vars |
+| `/resources` | Detected CPU/RAM and the thread/worker counts sized from them |
 | `/rdp` | JSON with the current public RDP endpoint and status |
 
 ## Deploy to Render (step by step)

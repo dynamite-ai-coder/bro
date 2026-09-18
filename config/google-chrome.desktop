@@ -2,7 +2,7 @@
 Type=Application
 Name=Google Chrome
 Comment=Web Browser
-Exec=google-chrome --no-sandbox --test-type --disable-gpu --disable-dev-shm-usage --password-store=basic --start-maximized --no-first-run --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding
+Exec=google-chrome-tuned --start-maximized
 Icon=google-chrome
 Terminal=false
 Hidden=false

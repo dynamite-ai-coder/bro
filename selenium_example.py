@@ -19,6 +19,9 @@ def create_driver():
     options.add_argument('--no-first-run')
     options.add_argument('--no-default-browser-check')
     options.add_argument('--window-size=1280,800')
+    cpus = os.environ.get('CPU_COUNT', '')
+    if cpus.isdigit() and int(cpus) > 0:
+        options.add_argument(f'--num-raster-threads={cpus}')
     options.binary_location = os.environ.get('CHROME_BIN', '/usr/bin/google-chrome')
 
     if os.environ.get('SELENIUM_HEADLESS', '').lower() in ('1', 'true', 'yes'):

@@ -1,10 +1,10 @@
-worker_processes auto;
-worker_rlimit_nofile 65535;
+worker_processes __NGINX_WORKERS__;
+worker_rlimit_nofile __RLIMIT_NOFILE__;
 pid /run/nginx.pid;
 error_log /var/log/nginx/error.log warn;
 
 events {
-    worker_connections 8192;
+    worker_connections __WORKER_CONNECTIONS__;
     multi_accept on;
 }
 

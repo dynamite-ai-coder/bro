@@ -97,6 +97,23 @@ def version():
     }, 200
 
 
+@app.route('/resources')
+def resources():
+    def as_int(name):
+        try:
+            return int(os.environ.get(name, '0'))
+        except (TypeError, ValueError):
+            return 0
+    return {
+        'cpu_count': as_int('CPU_COUNT'),
+        'memory_mb': as_int('MEMORY_MB'),
+        'nginx_workers': as_int('NGINX_WORKERS'),
+        'web_threads': as_int('WEB_THREADS'),
+        'nofile_limit': as_int('NOFILE_LIMIT'),
+        'worker_connections': as_int('WORKER_CONNECTIONS'),
+    }, 200
+
+
 @app.route('/rdp')
 def rdp():
     address = tunnel_address()

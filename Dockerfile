@@ -115,6 +115,7 @@ COPY start.sh /start.sh
 
 RUN chmod +x /start.sh /usr/local/bin/start-nginx.sh /usr/local/bin/start-web.sh \
         /usr/local/bin/start-x11vnc.sh /usr/local/bin/start-xfce.sh /usr/local/bin/start-xrdp.sh \
+        /usr/local/bin/google-chrome-tuned \
     && chown desktopuser:desktopuser /home/desktopuser/selenium_example.py
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \

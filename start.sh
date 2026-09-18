@@ -1,7 +1,69 @@
 #!/bin/bash
 set -e
 
-ulimit -n 65535 2>/dev/null || true
+detect_cpu_count() {
+    local quota period
+    if [ -r /sys/fs/cgroup/cpu.max ]; then
+        read -r quota period < /sys/fs/cgroup/cpu.max
+        if [ "${quota}" != "max" ] && [ "${period:-0}" -gt 0 ] 2>/dev/null; then
+            echo $(( (quota + period - 1) / period ))
+            return
+        fi
+    fi
+    if [ -r /sys/fs/cgroup/cpu/cpu.cfs_quota_us ] && [ -r /sys/fs/cgroup/cpu/cpu.cfs_period_us ]; then
+        quota="$(cat /sys/fs/cgroup/cpu/cpu.cfs_quota_us)"
+        period="$(cat /sys/fs/cgroup/cpu/cpu.cfs_period_us)"
+        if [ "${quota:-0}" -gt 0 ] 2>/dev/null && [ "${period:-0}" -gt 0 ] 2>/dev/null; then
+            echo $(( (quota + period - 1) / period ))
+            return
+        fi
+    fi
+    nproc 2>/dev/null || echo 1
+}
+
+detect_memory_mb() {
+    local limit
+    if [ -r /sys/fs/cgroup/memory.max ]; then
+        limit="$(cat /sys/fs/cgroup/memory.max)"
+    elif [ -r /sys/fs/cgroup/memory/memory.limit_in_bytes ]; then
+        limit="$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes)"
+    fi
+    if [ -n "${limit:-}" ] && [ "${limit}" != "max" ] && [ "${limit}" -gt 0 ] 2>/dev/null; then
+        echo $(( limit / 1048576 ))
+        return
+    fi
+    awk '/MemTotal/ {printf "%d\n", $2 / 1024}' /proc/meminfo
+}
+
+CPU_COUNT="$(detect_cpu_count)"
+[[ "${CPU_COUNT}" =~ ^[0-9]+$ ]] || CPU_COUNT=1
+[ "${CPU_COUNT}" -ge 1 ] || CPU_COUNT=1
+MEMORY_MB="$(detect_memory_mb)"
+[[ "${MEMORY_MB}" =~ ^[0-9]+$ ]] || MEMORY_MB=512
+export CPU_COUNT MEMORY_MB
+export NGINX_WORKERS="${CPU_COUNT}"
+
+WEB_THREADS=$(( CPU_COUNT * 4 ))
+if [ "${WEB_THREADS}" -lt 8 ]; then WEB_THREADS=8; fi
+if [ "${WEB_THREADS}" -gt 256 ]; then WEB_THREADS=256; fi
+export WEB_THREADS
+
+export OMP_NUM_THREADS="${CPU_COUNT}"
+export OPENBLAS_NUM_THREADS="${CPU_COUNT}"
+export NUMEXPR_NUM_THREADS="${CPU_COUNT}"
+export MKL_NUM_THREADS="${CPU_COUNT}"
+export VECLIB_MAXIMUM_THREADS="${CPU_COUNT}"
+
+NOFILE_LIMIT="$(ulimit -Hn 2>/dev/null || true)"
+case "${NOFILE_LIMIT}" in
+    ''|unlimited) NOFILE_LIMIT=1048576 ;;
+esac
+[[ "${NOFILE_LIMIT}" =~ ^[0-9]+$ ]] || NOFILE_LIMIT=65535
+ulimit -n "${NOFILE_LIMIT}" 2>/dev/null || true
+WORKER_CONNECTIONS=$(( NOFILE_LIMIT / 2 ))
+if [ "${WORKER_CONNECTIONS}" -gt 8192 ]; then WORKER_CONNECTIONS=8192; fi
+if [ "${WORKER_CONNECTIONS}" -lt 1024 ]; then WORKER_CONNECTIONS=1024; fi
+export NOFILE_LIMIT WORKER_CONNECTIONS
 
 export PORT="${PORT:-8080}"
 export RESOLUTION="${RESOLUTION:-1280x800}"
@@ -22,6 +84,10 @@ fi
 echo "Starting remote desktop environment..."
 echo "  Port:       ${PORT}"
 echo "  Resolution: ${RESOLUTION}"
+echo "  CPUs:       ${CPU_COUNT} (cgroup-aware)"
+echo "  RAM:        ${MEMORY_MB} MiB available to this service"
+echo "  nginx:      ${NGINX_WORKERS} workers, ${WORKER_CONNECTIONS} connections/worker, nofile ${NOFILE_LIMIT}"
+echo "  web:        waitress ${WEB_THREADS} threads"
 echo "  VNC port:   5900 (internal, shared XFCE desktop)"
 echo "  RDP port:   3389 (xrdp -> x11vnc 5900 -> XFCE desktop)"
 echo "  RDP WS:     wss://<service-host>/${RDP_WS_PATH} (stable, native RDP via a websocket bridge)"
@@ -67,6 +133,11 @@ if [ "${#RDP_PASSWORD}" -gt 8 ]; then
 fi
 
 echo "  nginx:      listening on port ${PORT}"
-sed -e "s/__PORT__/${PORT}/g" -e "s/__RDP_WS_PATH__/${RDP_WS_PATH}/g" /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
+sed -e "s/__PORT__/${PORT}/g" \
+    -e "s/__RDP_WS_PATH__/${RDP_WS_PATH}/g" \
+    -e "s/__NGINX_WORKERS__/${NGINX_WORKERS}/g" \
+    -e "s/__RLIMIT_NOFILE__/${NOFILE_LIMIT}/g" \
+    -e "s/__WORKER_CONNECTIONS__/${WORKER_CONNECTIONS}/g" \
+    /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
 
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
