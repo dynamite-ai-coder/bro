@@ -170,6 +170,10 @@ Set `SELENIUM_HEADLESS=1` to run Chrome without a visible window.
   listen on `$PORT`, waitress on `127.0.0.1:5000`.
 - **Blank noVNC screen**: wait 5-10 s for XFCE, then reload; check
   `/var/log/x11vnc.log` and the nginx access log.
+- **Black terminal window, no prompt, typing does nothing**: the desktop used
+  to launch `zutty`, which needs OpenGL and stays black on the Xvfb display.
+  The image now installs `xfce4-terminal` (default, `Ctrl+Alt+T`) plus `xterm`
+  and removes zutty; redeploy to pick up the change.
 - **No RDP endpoint**: check the `tunnel` program logs; ngrok needs a valid
   `NGROK_AUTHTOKEN`, bore.pub needs outbound TCP 7835.
 - **Log noise**: Render probes every listening port on localhost; x11vnc logs go
