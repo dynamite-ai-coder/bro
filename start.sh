@@ -26,8 +26,8 @@ rm -f /run/rdp-tunnel.txt
 if [ -d /data ]; then
     echo "  Disk:       /data attached, user files persist across deploys"
     mkdir -p /data/Desktop /data/Documents /data/Downloads /data/chrome
-    cp -n /usr/share/applications/tor-browser.desktop /data/Desktop/ 2>/dev/null || true
-    cp -n /home/desktopuser/.config/autostart/google-chrome.desktop /data/Desktop/ 2>/dev/null || true
+    cp -f /usr/share/applications/tor-browser.desktop /data/Desktop/
+    cp -f /home/desktopuser/.config/autostart/google-chrome.desktop /data/Desktop/
     chmod +x /data/Desktop/*.desktop 2>/dev/null || true
     rm -rf /home/desktopuser/Desktop /home/desktopuser/Documents \
         /home/desktopuser/Downloads /home/desktopuser/.config/google-chrome

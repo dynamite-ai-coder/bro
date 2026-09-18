@@ -31,12 +31,14 @@ component restarts automatically. nginx is the only process bound to `$PORT`.
 |------|-------|
 | RDP username | `admin` |
 | RDP password | `VNC_PASSWORD` (default `Dupa1234@`) |
-| OS user | `admin` (sudo), `desktopuser` (desktop session, passwordless sudo) |
+| OS user | desktop session runs as `root`; `admin` and `desktopuser` exist for console use |
 | noVNC password | same as `VNC_PASSWORD` |
 
-The desktop session runs as `desktopuser`, which is a passwordless sudoer, so
-after logging in (browser or RDP) every terminal can run `sudo ...` without a
-password.
+The XFCE session runs as `root`, so after logging in (browser or RDP) every
+terminal already has full admin rights. Render starts containers with the
+`no-new-privileges` flag, which stops `sudo` from elevating; running the session
+as root is the only way to get admin rights on Render. Tor Browser refuses to
+run as root, so its launcher drops back to `desktopuser` with `runuser`.
 
 The RDP login bridges to x11vnc in password mode, so the username is ignored and
 the password is the VNC password. The RFB protocol only uses the first 8
@@ -158,8 +160,9 @@ Set `SELENIUM_HEADLESS=1` to run Chrome without a visible window.
   desktop.
 - The public TLS endpoint, the tunnel endpoint and the password are the only
   protection. Rotate the password if the URL leaks.
-- Both `admin` and the `desktopuser` session account have passwordless sudo
-  inside the container. Treat the desktop as a shared secret.
+- The XFCE session, the desktop apps and every terminal run as root. `sudo` is
+  blocked by Render's `no-new-privileges` flag; admin commands work directly.
+  Treat the desktop as a shared secret.
 - Rotate any API tokens that were shared in chat, logs or commits.
 
 ## Troubleshooting
@@ -174,6 +177,8 @@ Set `SELENIUM_HEADLESS=1` to run Chrome without a visible window.
   to launch `zutty`, which needs OpenGL and stays black on the Xvfb display.
   The image now installs `xfce4-terminal` (default, `Ctrl+Alt+T`) plus `xterm`
   and removes zutty; redeploy to pick up the change.
+- **`sudo: The "no new privileges" flag is set`**: expected on Render. The
+  desktop session already runs as root, so admin commands work without `sudo`.
 - **No RDP endpoint**: check the `tunnel` program logs; ngrok needs a valid
   `NGROK_AUTHTOKEN`, bore.pub needs outbound TCP 7835.
 - **Log noise**: Render probes every listening port on localhost; x11vnc logs go

@@ -55,10 +55,7 @@ RUN apt-get update \
 RUN useradd -m -s /bin/bash -G sudo admin \
     && echo 'admin:Dupa1234@' | chpasswd
 
-RUN useradd -m -s /bin/bash -G sudo desktopuser \
-    && echo 'desktopuser:desktopuser' | chpasswd \
-    && echo 'desktopuser ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/desktopuser \
-    && chmod 0440 /etc/sudoers.d/desktopuser
+RUN useradd -m -s /bin/bash -G sudo desktopuser
 
 RUN mkdir -p /home/desktopuser/.config/xfce4/xfconf/xfce-perchannel-xml \
     && mkdir -p /home/desktopuser/.config/autostart \
