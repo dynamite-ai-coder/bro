@@ -101,11 +101,9 @@ def version():
 def rdp():
     address = tunnel_address()
     host, _, port = (address or '').rpartition(':')
-    ws_base = request.host_url.rstrip('/')
-    if ws_base.startswith('https://'):
-        ws_base = 'wss://' + ws_base[len('https://'):]
-    elif ws_base.startswith('http://'):
-        ws_base = 'ws://' + ws_base[len('http://'):]
+    scheme = request.headers.get('X-Forwarded-Proto', request.scheme)
+    host = request.headers.get('X-Forwarded-Host', request.host)
+    ws_base = ('wss://' if scheme == 'https' else 'ws://') + host
     ws_endpoint = f'{ws_base}/{RDP_WS_PATH}'
     return {
         'rdp_endpoint': address,
