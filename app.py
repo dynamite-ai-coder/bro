@@ -100,15 +100,17 @@ def version():
 @app.route('/rdp')
 def rdp():
     address = tunnel_address()
-    host, _, port = (address or '').rpartition(':')
-    scheme = request.headers.get('X-Forwarded-Proto', request.scheme)
-    host = request.headers.get('X-Forwarded-Host', request.host)
-    ws_base = ('wss://' if scheme == 'https' else 'ws://') + host
+    tunnel_host, _, tunnel_port = (address or '').rpartition(':')
+    scheme = request.headers.get('X-Forwarded-Proto', '') or request.scheme
+    ws_host = request.headers.get('X-Forwarded-Host', request.host)
+    if scheme != 'https' and not ws_host.startswith(('localhost', '127.0.0.1', '0.0.0.0')):
+        scheme = 'https'
+    ws_base = ('wss://' if scheme == 'https' else 'ws://') + ws_host
     ws_endpoint = f'{ws_base}/{RDP_WS_PATH}'
     return {
         'rdp_endpoint': address,
-        'host': host or None,
-        'port': int(port) if port.isdigit() else None,
+        'host': tunnel_host or None,
+        'port': int(tunnel_port) if tunnel_port.isdigit() else None,
         'status': 'ready' if address else 'starting',
         'rdp_ws_endpoint': ws_endpoint,
         'rdp_ws_path': RDP_WS_PATH,
