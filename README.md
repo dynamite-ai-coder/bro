@@ -187,6 +187,10 @@ Set `SELENIUM_HEADLESS=1` to run Chrome without a visible window.
   and removes zutty; redeploy to pick up the change.
 - **`sudo: The "no new privileges" flag is set`**: expected on Render. The
   desktop session already runs as root, so admin commands work without `sudo`.
+- **"Untrusted application launcher" when double-clicking a desktop icon**:
+  standard XFCE confirmation for `.desktop` launchers it has not seen before.
+  Click **Launch Anyway** (or **Mark Executable**) once. The same apps start
+  from the Applications menu without any prompt.
 - **No RDP endpoint**: check the `tunnel` program logs; ngrok needs a valid
   `NGROK_AUTHTOKEN`, bore.pub needs outbound TCP 7835.
 - **Log noise**: Render probes every listening port on localhost; x11vnc logs go
