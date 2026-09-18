@@ -31,8 +31,12 @@ component restarts automatically. nginx is the only process bound to `$PORT`.
 |------|-------|
 | RDP username | `admin` |
 | RDP password | `VNC_PASSWORD` (default `Dupa1234@`) |
-| OS user | `admin` (sudo), `desktopuser` (desktop session, no sudo) |
+| OS user | `admin` (sudo), `desktopuser` (desktop session, passwordless sudo) |
 | noVNC password | same as `VNC_PASSWORD` |
+
+The desktop session runs as `desktopuser`, which is a passwordless sudoer, so
+after logging in (browser or RDP) every terminal can run `sudo ...` without a
+password.
 
 The RDP login bridges to x11vnc in password mode, so the username is ignored and
 the password is the VNC password. The RFB protocol only uses the first 8
@@ -154,8 +158,8 @@ Set `SELENIUM_HEADLESS=1` to run Chrome without a visible window.
   desktop.
 - The public TLS endpoint, the tunnel endpoint and the password are the only
   protection. Rotate the password if the URL leaks.
-- The `admin` account has sudo inside the container. Treat the desktop as a
-  shared secret.
+- Both `admin` and the `desktopuser` session account have passwordless sudo
+  inside the container. Treat the desktop as a shared secret.
 - Rotate any API tokens that were shared in chat, logs or commits.
 
 ## Troubleshooting
