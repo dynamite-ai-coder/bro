@@ -69,6 +69,30 @@ x11vnc password from that variable at startup.
 | `TUNNEL_FILE` | `/run/rdp-tunnel.txt` | Where the tunnel script writes `host:port` for `GET /rdp` |
 | `RDP_WS_PATH` | `rdpws` | URL path of the stable RDP WebSocket bridge. Set a random value to hide the endpoint |
 
+## Performance tuning
+
+The image is tuned to use the whole instance (all vCPUs and RAM) as far as the
+VNC/RDP pipeline allows:
+
+- `x11vnc` runs with `-threads` (one thread per client), XDAMAGE enabled (the old
+  `-noxdamage` flag was removed) and `-wait 1 -defer 1` for the lowest latency.
+- `nginx` uses `worker_processes auto` (one worker per vCPU), 8192 connections
+  per worker, `multi_accept`, `tcp_nopush`/`tcp_nodelay` and a 65535
+  file-descriptor limit.
+- `waitress` serves the Flask app with 16 threads.
+- `supervisord` raises `minfds`/`minprocs` to 65535 and `start.sh` runs
+  `ulimit -n 65535`.
+- Chrome starts with background throttling disabled
+  (`--disable-background-timer-throttling`,
+  `--disable-backgrounding-occluded-windows`, `--disable-renderer-backgrounding`)
+  and `--disable-dev-shm-usage`, so hidden tabs and Selenium jobs keep the CPU
+  busy without crashing on the small container `/dev/shm`.
+
+X11 itself (Xvfb, xrdp) is mostly single-threaded, so one RDP/noVNC stream will
+not saturate every core; the applications inside the desktop (Chrome, Tor,
+Selenium, compilers) are what scale across all vCPUs and use the full RAM of the
+Render plan. The image sets no per-container CPU or memory caps.
+
 ## HTTP endpoints
 
 | Path | Purpose |

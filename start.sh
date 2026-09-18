@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+ulimit -n 65535 2>/dev/null || true
+
 export PORT="${PORT:-8080}"
 export RESOLUTION="${RESOLUTION:-1280x800}"
 export VNC_PASSWORD="${VNC_PASSWORD:-}"
