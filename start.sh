@@ -8,6 +8,10 @@ export INTERNAL_PORT="${INTERNAL_PORT:-5000}"
 export NGROK_AUTHTOKEN="${NGROK_AUTHTOKEN:-}"
 export RDP_TUNNEL_PORT="${RDP_TUNNEL_PORT:-0}"
 export BORE_SECRET="${BORE_SECRET:-}"
+export RDP_WS_PATH="${RDP_WS_PATH:-rdpws}"
+
+RDP_WS_PATH="$(printf '%s' "${RDP_WS_PATH}" | tr -cd 'A-Za-z0-9_-')"
+export RDP_WS_PATH="${RDP_WS_PATH:-rdpws}"
 
 if [[ "${RESOLUTION}" =~ ^[0-9]+x[0-9]+$ ]]; then
     export RESOLUTION="${RESOLUTION}x24"
@@ -18,6 +22,7 @@ echo "  Port:       ${PORT}"
 echo "  Resolution: ${RESOLUTION}"
 echo "  VNC port:   5900 (internal, shared XFCE desktop)"
 echo "  RDP port:   3389 (xrdp -> x11vnc 5900 -> XFCE desktop)"
+echo "  RDP WS:     wss://<service-host>/${RDP_WS_PATH} (stable, native RDP via a websocket bridge)"
 echo "  WebSocket:  6080 (internal, noVNC bridge)"
 
 mkdir -p /home/desktopuser/.vnc /home/desktopuser/.config
@@ -60,6 +65,6 @@ if [ "${#RDP_PASSWORD}" -gt 8 ]; then
 fi
 
 echo "  nginx:      listening on port ${PORT}"
-sed "s/__PORT__/${PORT}/g" /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
+sed -e "s/__PORT__/${PORT}/g" -e "s/__RDP_WS_PATH__/${RDP_WS_PATH}/g" /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
 
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf

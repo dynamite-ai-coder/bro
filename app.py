@@ -4,6 +4,7 @@ from flask import Flask, Response, send_from_directory
 
 NOVNC_DIR = os.environ.get('NOVNC_DIR', '/usr/share/novnc')
 TUNNEL_FILE = os.environ.get('TUNNEL_FILE', '/run/rdp-tunnel.txt')
+RDP_WS_PATH = os.environ.get('RDP_WS_PATH', 'rdpws')
 
 app = Flask(__name__)
 
@@ -40,6 +41,12 @@ INDEX_HTML = """<!DOCTYPE html>
             <p>Username: <strong>admin</strong> &middot; Password: from <code>VNC_PASSWORD</code></p>
         </div>
         <div class="info">
+            <h2>Stable native RDP over WebSocket</h2>
+            <p>This Render URL never changes. Run <code>websocat</code> on your PC
+               and connect your RDP client to <code>127.0.0.1:3389</code>:</p>
+            <p class="endpoint" id="rdp-client">loading&hellip;</p>
+        </div>
+        <div class="info">
             <h2>Includes</h2>
             <ul>
                 <li>XFCE desktop over noVNC (browser) and RDP (native client)</li>
@@ -55,9 +62,12 @@ INDEX_HTML = """<!DOCTYPE html>
             .then(function (d) {
                 document.getElementById('rdp-endpoint').textContent =
                     d.rdp_endpoint || 'tunnel starting, refresh in a moment';
+                document.getElementById('rdp-client').textContent =
+                    d.rdp_client_command || 'not available';
             })
             .catch(function () {
                 document.getElementById('rdp-endpoint').textContent = 'not available';
+                document.getElementById('rdp-client').textContent = 'not available';
             });
     </script>
 </body>
@@ -91,11 +101,20 @@ def version():
 def rdp():
     address = tunnel_address()
     host, _, port = (address or '').rpartition(':')
+    ws_base = request.host_url.rstrip('/')
+    if ws_base.startswith('https://'):
+        ws_base = 'wss://' + ws_base[len('https://'):]
+    elif ws_base.startswith('http://'):
+        ws_base = 'ws://' + ws_base[len('http://'):]
+    ws_endpoint = f'{ws_base}/{RDP_WS_PATH}'
     return {
         'rdp_endpoint': address,
         'host': host or None,
         'port': int(port) if port.isdigit() else None,
         'status': 'ready' if address else 'starting',
+        'rdp_ws_endpoint': ws_endpoint,
+        'rdp_ws_path': RDP_WS_PATH,
+        'rdp_client_command': f'websocat -b tcp-l:127.0.0.1:3389 {ws_endpoint}',
     }, 200
 
 

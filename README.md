@@ -17,10 +17,16 @@ Deployed as a Docker web service on Render:
 Browser --HTTPS/WSS--> Render --+--> nginx :$PORT
                                 |     |-- /            --> waitress/Flask :5000  (landing, /health, /rdp)
                                 |     |-- /vnc.html     --> waitress/Flask :5000  (noVNC app + static files)
-                                |     '-- /websockify   --> websockify :6080 --> x11vnc :5900
+                                |     |-- /websockify   --> websockify :6080 --> x11vnc :5900
+                                |     '-- /<RDP_WS_PATH> --> rdpws bridge :6081 --> xrdp :3389
                                 |                                                  |
 RDP client --> ngrok/pinggy/bore TCP --+--> xrdp :3389 --> x11vnc :5900 ----------+--> Xvfb :0 --> XFCE
 ```
+
+The `/<RDP_WS_PATH>` route is a **stable** native-RDP path: it never changes
+because it goes through the Render HTTPS URL, which is fixed. Tunnels
+(ngrok/pinggy/bore) are only a fallback for clients that cannot run a local
+WebSocket bridge.
 
 All processes are supervised by `supervisord` (started by `/start.sh`), so every
 component restarts automatically. nginx is the only process bound to `$PORT`.
@@ -61,6 +67,7 @@ x11vnc password from that variable at startup.
 | `RDP_TUNNEL_PORT` | `0` | Requested public port for the bore tunnel (`0` = random) |
 | `BORE_SECRET` | (empty) | Optional shared secret for a self-hosted bore server |
 | `TUNNEL_FILE` | `/run/rdp-tunnel.txt` | Where the tunnel script writes `host:port` for `GET /rdp` |
+| `RDP_WS_PATH` | `rdpws` | URL path of the stable RDP WebSocket bridge. Set a random value to hide the endpoint |
 
 ## HTTP endpoints
 
@@ -69,6 +76,7 @@ x11vnc password from that variable at startup.
 | `/` | Landing page with the "Open Desktop in Browser" button and the RDP endpoint |
 | `/vnc.html` | noVNC web desktop (WebSocket to `/websockify`) |
 | `/websockify` | WebSocket proxy to x11vnc (used by noVNC) |
+| `/<RDP_WS_PATH>` | Stable WebSocket-to-RDP bridge (xrdp 3389), used by the `websocat` client |
 | `/health` | Health check used by Render |
 | `/version` | Deployed commit/branch/service from Render env vars |
 | `/rdp` | JSON with the current public RDP endpoint and status |
@@ -103,8 +111,37 @@ curl -s https://bro-56z7.onrender.com/rdp
 # {"rdp_endpoint":"2.tcp.eu.ngrok.io:12345", ...}
 ```
 
-8. Open the service URL and click **Open Desktop in Browser** (noVNC), or connect
-   a native RDP client to the address returned by `/rdp`.
+8. Open the service URL and click **Open Desktop in Browser** (noVNC), or use
+   the stable native RDP path described below.
+
+### Stable native RDP over WebSocket (free, no more changing ports)
+
+Native RDP needs raw TCP, which Render (and the free ngrok plan) does not expose.
+Instead of chasing a rotating tunnel address, bridge the fixed Render URL to a
+local port with a tiny WebSocket client:
+
+1. Download `websocat` for your OS from
+   https://github.com/vi/websocat/releases (single binary, no install).
+2. Run it on the machine where your RDP client is:
+
+```bash
+websocat -b tcp-l:127.0.0.1:3389 wss://bro-56z7.onrender.com/rdpws
+```
+
+3. Connect any RDP client (mstsc, Remmina, FreeRDP) to:
+
+```
+127.0.0.1:3389
+```
+
+The URL is the Render service URL and the local port is fixed, so this endpoint
+never changes and does not expire. Keep `websocat` running while you use the
+desktop. Username `admin`, password `VNC_PASSWORD`.
+
+To hide the bridge behind an unguessable path, set `RDP_WS_PATH` (for example a
+random string) in the Render dashboard and use
+`wss://bro-56z7.onrender.com/<RDP_WS_PATH>` in the client command. `GET /rdp`
+returns the exact `rdp_client_command` for the current deployment.
 
 ### ngrok authtoken and tunnel fallbacks
 
@@ -141,9 +178,11 @@ Set `SELENIUM_HEADLESS=1` to run Chrome without a visible window.
 
 ## Limitations
 
-- **Only HTTP/HTTPS is public on Render.** The browser desktop works directly;
-  native RDP needs the ngrok/pinggy/bore tunnel. Tunnel addresses change on every
-  container start, and pinggy sessions expire after 60 minutes (the endpoint
+- **Only HTTP/HTTPS is public on Render.** The browser desktop works directly, and
+  the stable `/<RDP_WS_PATH>` WebSocket bridge covers native RDP clients through
+  the same fixed URL. The ngrok/pinggy/bore tunnel remains as a fallback for
+  clients that cannot run `websocat`; tunnel addresses change on every container
+  start, and pinggy sessions expire after 60 minutes (the endpoint
   refreshes automatically).
 - **Free/low plans sleep** after inactivity, which drops RDP sessions and the
   tunnel. Use a paid instance type for reliable access.
